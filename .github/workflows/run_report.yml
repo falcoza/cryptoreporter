@@ -1,0 +1,36 @@
+name: Market Report Automation
+
+on:
+  schedule:
+    # 10:45 AM SAST = 08:45 UTC every Thursday
+    - cron: '45 8 * * 4'
+  workflow_dispatch:
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pycoingecko pillow
+
+      - name: Generate and send report
+        env:
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        run: python main.py
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: crypto-report
+          path: Crypto_Report_*.png
