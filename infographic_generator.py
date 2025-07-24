@@ -1,4 +1,3 @@
-```python
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 from config import *
@@ -118,4 +117,3 @@ def generate_infographic(data):
 
     except Exception as e:
         raise RuntimeError(f"Infographic generation failed: {str(e)}")
-```
