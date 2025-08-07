@@ -36,7 +36,8 @@ def get_coin_ytd_price(cg: CoinGeckoAPI, coin_id: str) -> Optional[float]:
             coin_id,
             "zar",
             int(start.timestamp()),
-            int(end.timestamp())
+            int(end.timestamp()),
+            timeout=10
         )
         prices = history.get("prices", []) if history else []
         return next(
@@ -57,7 +58,8 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
             coin_id,
             "zar",
             int((target - window).timestamp()),
-            int((target + window).timestamp())
+            int((target + window).timestamp()),
+            timeout=10
         )
         prices = history.get("prices", [])
         if prices:
@@ -74,7 +76,8 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
             coin_id,
             "zar",
             int(start.timestamp()),
-            int(end.timestamp())
+            int(end.timestamp()),
+            timeout=10
         )
         prices = history.get("prices", []) if history else []
         if not prices:
@@ -87,8 +90,7 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
 
 def fetch_market_data() -> Optional[Dict[str, Any]]:
     """Fetch top-10 cryptocurrencies in ZAR with Today, 1d, 30d and YTD metrics."""
-    # add a 10s timeout to all HTTP requests
-    cg = CoinGeckoAPI(timeout=10)
+    cg = CoinGeckoAPI()
     crypto_ids = {
         "bitcoin": "BTC",
         "ethereum": "ETH",
@@ -107,7 +109,8 @@ def fetch_market_data() -> Optional[Dict[str, Any]]:
             cg,
             cg.get_price,
             ids=",".join(crypto_ids.keys()),
-            vs_currencies="zar"
+            vs_currencies="zar",
+            timeout=10
         )
         if not prices:
             raise ValueError("No price data received")
