@@ -1,8 +1,8 @@
 from pycoingecko import CoinGeckoAPI
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
+from zoneinfo import ZoneInfo
 import time
-import pytz
 
 def calculate_percentage(old: Optional[float], new: Optional[float]) -> float:
     """Calculate percentage change with null safety."""
@@ -114,7 +114,7 @@ def fetch_market_data() -> Optional[Dict[str, Any]]:
         if not prices:
             raise ValueError("No price data received")
 
-        timestamp = datetime.now(pytz.timezone("Africa/Johannesburg")).strftime("%d %b %Y, %H:%M")
+        timestamp = datetime.now(ZoneInfo("Africa/Johannesburg")).strftime("%d %b %Y, %H:%M")
         result: Dict[str, Any] = {
             "timestamp": timestamp,
             "data_status": {}
