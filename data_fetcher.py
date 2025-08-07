@@ -1,8 +1,6 @@
 from pycoingecko import CoinGeckoAPI
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
-import time
-import pytz
 
 def calculate_percentage(old: Optional[float], new: Optional[float]) -> float:
     """Calculate percentage change with null safety."""
@@ -84,7 +82,9 @@ def fetch_market_data() -> Optional[Dict[str, Any]]:
         # Current prices
         prices = cg.get_price(ids=','.join(crypto_ids.keys()), vs_currencies="zar")
 
-        result: Dict[str, Any] = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M")}
+        result: Dict[str, Any] = {
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        }
         
         for coin_id, symbol in crypto_ids.items():
             today = prices.get(coin_id, {}).get("zar")
@@ -93,10 +93,10 @@ def fetch_market_data() -> Optional[Dict[str, Any]]:
             ytd_hist = get_coin_ytd_price(cg, coin_id)
 
             result[f"{symbol}ZAR"] = {
-                "Today":    today,
-                "Change":   calculate_percentage(day_hist, today),
-                "Monthly":  calculate_percentage(month_hist, today),
-                "YTD":      calculate_percentage(ytd_hist, today)
+                "Today": today,
+                "Change": calculate_percentage(day_hist, today),
+                "Monthly": calculate_percentage(month_hist, today),
+                "YTD": calculate_percentage(ytd_hist, today) if ytd_hist else 0.0
             }
 
         return result
