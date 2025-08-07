@@ -6,6 +6,7 @@ EMAIL_SENDER    = "ypanchia@gmail.com"
 EMAIL_PASSWORD  = os.getenv("EMAIL_PASSWORD")
 EMAIL_RECEIVERS = [
     "yeshiel@dailymaverick.co.za"
+    "lindsey@dailymaverick.co.za,
 ]
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT   = 587
