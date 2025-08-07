@@ -52,11 +52,7 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
     """Fetch historical coin price in ZAR for a given number of days ago."""
     try:
         target = datetime.now(timezone.utc) - timedelta(days=days)
-        # tighten window for 1-day comparisons
-        if days == 1:
-            window = timedelta(minutes=30)
-        else:
-            window = timedelta(hours=12)
+        window = timedelta(minutes=30) if days == 1 else timedelta(hours=12)
         history = cg.get_coin_market_chart_range_by_id(
             coin_id,
             "zar",
@@ -68,6 +64,7 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
             target_ts = target.timestamp() * 1000
             closest = min(prices, key=lambda x: abs(x[0] - target_ts))
             return closest[1]
+
         target_date = target.date()
         start = datetime.combine(target_date - timedelta(days=1), datetime.min.time()).replace(tzinfo=timezone.utc)
         end = datetime.combine(target_date + timedelta(days=1), datetime.max.time()).replace(tzinfo=timezone.utc)
@@ -90,7 +87,8 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
 
 def fetch_market_data() -> Optional[Dict[str, Any]]:
     """Fetch top-10 cryptocurrencies in ZAR with Today, 1d, 30d and YTD metrics."""
-    cg = CoinGeckoAPI()
+    # add a 10s timeout to all HTTP requests
+    cg = CoinGeckoAPI(timeout=10)
     crypto_ids = {
         "bitcoin": "BTC",
         "ethereum": "ETH",
