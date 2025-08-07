@@ -39,7 +39,6 @@ def get_coin_ytd_price(cg: CoinGeckoAPI, coin_id: str) -> Optional[float]:
             int(end.timestamp())
         )
         prices = history.get("prices", []) if history else []
-        # Get first valid price on or after Jan 1
         return next(
             (p[1] for p in prices
              if datetime.fromtimestamp(p[0] / 1000, tz=timezone.utc).date() >= start.date()),
@@ -53,7 +52,11 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
     """Fetch historical coin price in ZAR for a given number of days ago."""
     try:
         target = datetime.now(timezone.utc) - timedelta(days=days)
-        window = timedelta(hours=12)
+        # tighten window for 1-day comparisons
+        if days == 1:
+            window = timedelta(minutes=30)
+        else:
+            window = timedelta(hours=12)
         history = cg.get_coin_market_chart_range_by_id(
             coin_id,
             "zar",
@@ -62,11 +65,9 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
         )
         prices = history.get("prices", [])
         if prices:
-            # Find price closest to target timestamp
             target_ts = target.timestamp() * 1000
             closest = min(prices, key=lambda x: abs(x[0] - target_ts))
             return closest[1]
-        # fallback 3-day window
         target_date = target.date()
         start = datetime.combine(target_date - timedelta(days=1), datetime.min.time()).replace(tzinfo=timezone.utc)
         end = datetime.combine(target_date + timedelta(days=1), datetime.max.time()).replace(tzinfo=timezone.utc)
