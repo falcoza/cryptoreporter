@@ -5,22 +5,21 @@ import time
 import requests
 from functools import wraps
 
-# Timeout configuration
+# Configuration
 REQUEST_TIMEOUT = 10  # seconds
 MAX_RETRIES = 2
 RETRY_DELAY = 1
 
-def timeout_retry(max_retries=MAX_RETRIES, delay=RETRY_DELAY, timeout=REQUEST_TIMEOUT):
-    """Decorator for API calls with timeout and retry logic."""
+def timeout_retry(max_retries=MAX_RETRIES, delay=RETRY_DELAY):
+    """Decorator for API calls with retry logic."""
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             last_error = None
             for attempt in range(max_retries):
                 try:
-                    # Add timeout to requests
-                    if 'timeout' not in kwargs:
-                        kwargs['timeout'] = timeout
+                    # Remove timeout from kwargs if exists
+                    kwargs.pop('timeout', None)
                     return func(*args, **kwargs)
                 except (requests.exceptions.RequestException, Exception) as e:
                     last_error = e
@@ -31,19 +30,14 @@ def timeout_retry(max_retries=MAX_RETRIES, delay=RETRY_DELAY, timeout=REQUEST_TI
         return wrapper
     return decorator
 
-@timeout_retry()
 def safe_cg_request(cg, method, *args, **kwargs):
-    """Safe wrapper for CoinGecko API calls."""
-    return method(*args, **kwargs)
-
-def calculate_percentage(old: Optional[float], new: Optional[float]) -> float:
-    """Calculate percentage change with null safety."""
-    if None in (old, new) or old == 0:
-        return 0.0
+    """Safe wrapper for CoinGecko API calls with timeout."""
     try:
-        return ((new - old) / old) * 100
-    except Exception:
-        return 0.0
+        # Apply timeout only at the request level
+        kwargs['timeout'] = REQUEST_TIMEOUT
+        return method(*args, **kwargs)
+    except Exception as e:
+        raise e
 
 @timeout_retry()
 def get_coin_ytd_price(cg: CoinGeckoAPI, coin_id: str) -> Optional[float]:
@@ -63,7 +57,7 @@ def get_coin_ytd_price(cg: CoinGeckoAPI, coin_id: str) -> Optional[float]:
 
 @timeout_retry()
 def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional[float]:
-    """Fetch historical coin price in ZAR with timeout."""
+    """Fetch historical coin price in ZAR."""
     try:
         target = datetime.now(timezone.utc) - timedelta(days=days)
         window = timedelta(hours=12)
@@ -84,7 +78,7 @@ def fetch_coin_historical(cg: CoinGeckoAPI, coin_id: str, days: int) -> Optional
         return None
 
 def fetch_market_data() -> Optional[Dict[str, Any]]:
-    """Fetch crypto data with comprehensive timeout protection."""
+    """Fetch crypto data with timeout protection."""
     cg = CoinGeckoAPI()
     crypto_ids = {
         "bitcoin": "BTC",
@@ -123,10 +117,6 @@ def fetch_market_data() -> Optional[Dict[str, Any]]:
                 month_hist = fetch_coin_historical(cg, coin_id, 30)
                 ytd_hist = get_coin_ytd_price(cg, coin_id)
 
-                # Timeout check
-                if time.time() - start_time > 30:  # 30s max per coin
-                    raise TimeoutError(f"Timeout processing {symbol}")
-                
                 result[f"{symbol}ZAR"] = {
                     "Today": float(today),
                     "Change": calculate_percentage(day_hist, today),
